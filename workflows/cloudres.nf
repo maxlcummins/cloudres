@@ -43,28 +43,35 @@ workflow CLOUDRES {
         [],
         [])
 
+    updated_reads_ch = FASTP.out.reads
+
     ch_multiqc_files = ch_multiqc_files.mix(FASTP.out.json.collect{it[1]})
     ch_versions = ch_versions.mix(FASTP.out.versions.first())
 
-    if (!params.hostile_db) {
-        error "Parameter 'hostile_db' is required but was not specified"
-    }
+    if (!params.skip_rasusa) {
+        if (!params.hostile_db) {
+            error "Parameter 'hostile_db' is required but was not specified"
+        }
+        
+        hostile_db_ch = file(params.hostile_db).exists() ? 
+                    Channel.value(file(params.hostile_db)) : 
+                    { error "Hostile database file not found: ${params.hostile_db}" }
+
+        // Dehosting
+        HOSTILE_CLEAN(updated_reads_ch, hostile_db_ch, 'human-t2t-hla.argos-bacteria-985_rs-viral-202401_ml-phage-202401')
+
+        updated_reads_ch = HOSTILE_CLEAN.out.fastq
+
+        ch_multiqc_files = ch_multiqc_files.mix(HOSTILE_CLEAN.out.json.collect{it[1]})
+        ch_versions = ch_versions.mix(HOSTILE_CLEAN.out.versions.first())
+        }
+
     
-    hostile_db_ch = file(params.hostile_db).exists() ? 
-                 Channel.value(file(params.hostile_db)) : 
-                 { error "Hostile database file not found: ${params.hostile_db}" }
-
-    // Dehosting
-    HOSTILE_CLEAN(FASTP.out.reads, hostile_db_ch, 'human-t2t-hla.argos-bacteria-985_rs-viral-202401_ml-phage-202401')
-
-
-    ch_multiqc_files = ch_multiqc_files.mix(HOSTILE_CLEAN.out.json.collect{it[1]})
-    ch_versions = ch_versions.mix(HOSTILE_CLEAN.out.versions.first())
 
     // RASUSA subsampling
     if (!params.skip_rasusa) {
         // Create proper input format for RASUSA
-        ch_rasusa_input = HOSTILE_CLEAN.out.fastq.map { meta, reads -> 
+        ch_rasusa_input = updated_reads_ch.map { meta, reads -> 
             // Add genome_size from params
             [ meta, reads, params.genome_size ]
         }
@@ -72,14 +79,12 @@ workflow CLOUDRES {
             ch_rasusa_input,
             params.depth_cutoff ?: 100 // Default depth cutoff if not specified
         )
-        ch_reads_to_assemble = RASUSA.out.reads
+        updated_reads_ch = RASUSA.out.reads
 
         ch_versions = ch_versions.mix(RASUSA.out.versions.first())
-    } else {
-        ch_reads_to_assemble = HOSTILE_CLEAN.out.fastq
     }
 
-    ch_reads_to_assemble = ch_reads_to_assemble
+    ch_reads_to_assemble = updated_reads_ch
     .map { meta, fastq -> [ meta, fastq, [], [] ] }
 
     // Genome assembly
