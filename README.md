@@ -1,8 +1,9 @@
 # nf-core/cloudres
 
 [![GitHub Actions CI Status](https://github.com/nf-core/cloudres/actions/workflows/ci.yml/badge.svg)](https://github.com/nf-core/cloudres/actions/workflows/ci.yml)
-[![GitHub Actions Linting Status](https://github.com/nf-core/cloudres/actions/workflows/linting.yml/badge.svg)](https://github.com/nf-core/cloudres/actions/workflows/linting.yml)[![Cite with Zenodo](http://img.shields.io/badge/DOI-10.5281/zenodo.XXXXXXX-1073c8?labelColor=000000)](https://doi.org/10.5281/zenodo.XXXXXXX)
-[![nf-test](https://img.shields.io/badge/unit_tests-nf--test-337ab7.svg)](https://www.nf-test.com)
+[![GitHub Actions Linting Status](https://github.com/nf-core/cloudres/actions/workflows/linting.yml/badge.svg)](https://github.com/nf-core/cloudres/actions/workflows/linting.yml)
+[![Cite with Zenodo](http://img.shields.io/badge/DOI-10.5281/zenodo.XXXXXXX-1073c8?labelColor=000000)](https://doi.org/10.5281/zenodo.XXXXXXX)
+[![unit tests](https://img.shields.io/badge/unit_tests-nf--test-337ab7.svg)](https://www.nf-test.com)
 
 [![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A524.04.2-23aa62.svg)](https://www.nextflow.io/)
 [![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?labelColor=000000&logo=anaconda)](https://docs.conda.io/en/latest/)
@@ -12,48 +13,47 @@
 
 ## Introduction
 
-**nf-core/cloudres** is a bioinformatics pipeline that ...
+**nf-core/cloudres** is a Nextflow pipeline designed for bacterial antimicrobial resistance (AMR) typing. The pipeline ingests raw sequence data (FASTQ files) and performs comprehensive processing steps, including quality control, read trimming, host contamination removal, de novo assembly, and AMR gene detection. The output comprises quality reports, sequence assemblies, and AMR typing results to guide downstream analyses.
 
-<!-- TODO nf-core:
-   Complete this sentence with a 2-3 sentence summary of what types of data the pipeline ingests, a brief overview of the
-   major pipeline sections and the types of output it produces. You're giving an overview to someone new
-   to nf-core here, in 15-20 seconds. For an example, see https://github.com/nf-core/rnaseq/blob/master/README.md#introduction
--->
+## Pipeline Overview
 
-<!-- TODO nf-core: Include a figure that guides the user through the major workflow steps. Many nf-core
-     workflows use the "tube map" design for that. See https://nf-co.re/docs/contributing/design_guidelines#examples for examples.   -->
-<!-- TODO nf-core: Fill in short bullet-pointed list of the default steps in the pipeline -->1. Read QC ([`FastQC`](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/))2. Present QC for raw reads ([`MultiQC`](http://multiqc.info/))
+The main steps of the pipeline include:
+
+1. **Quality Control:**  
+   - Run [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) on raw reads.
+   - Aggregate QC metrics with [MultiQC](http://multiqc.info/).
+
+2. **Preprocessing:**  
+   - Trim and filter sequence data using [Fastp](https://github.com/OpenGene/fastp).
+   - Remove contaminating host sequences (if provided) using tailored modules.
+
+3. **Assembly and Typing:**  
+   - Assemble reads using [SPADES](http://cab.spbu.ru/software/spades/).
+   - Perform AMR gene identification and bacterial typing via integrated tools.
+
+4. **Post-processing and Reporting:**  
+   - Generate comprehensive reports and collate software versions.
+   - Sync results to designated S3 buckets for further review.
 
 ## Usage
 
-> [!NOTE]
-> If you are new to Nextflow and nf-core, please refer to [this page](https://nf-co.re/docs/usage/installation) on how to set-up Nextflow. Make sure to [test your setup](https://nf-co.re/docs/usage/introduction#how-to-run-a-pipeline) with `-profile test` before running the workflow on actual data.
-
-<!-- TODO nf-core: Describe the minimum required steps to execute the pipeline, e.g. how to prepare samplesheets.
-     Explain what rows and columns represent. For instance (please edit as appropriate):
-
-First, prepare a samplesheet with your input data that looks as follows:
-
-`samplesheet.csv`:
+Prepare a sample sheet (`samplesheet.csv`) containing your FASTQ files. The expected format is:
 
 ```csv
-sample,fastq_1,fastq_2
-CONTROL_REP1,AEG588A1_S1_L002_R1_001.fastq.gz,AEG588A1_S1_L002_R2_001.fastq.gz
+name,fastq_1,fastq_2
+SAMPLE_NAME,/path/to/sample_R1.fastq.gz,/path/to/sample_R2.fastq.gz
 ```
 
-Each row represents a fastq file (single-end) or a pair of fastq files (paired end).
+Each row represents the sample name followed by the paths to its paired-end reads.
 
--->
-
-Now, you can run the pipeline using:
-
-<!-- TODO nf-core: update the following command to include all required parameters for a minimal example -->
+Running the Pipeline
+You can run the pipeline using:
 
 ```bash
 nextflow run nf-core/cloudres \
    -profile <docker/singularity/.../institute> \
    --input samplesheet.csv \
-   --outdir <OUTDIR>
+   --outdir /path/to/output_directory
 ```
 
 > [!WARNING]
@@ -64,8 +64,6 @@ nextflow run nf-core/cloudres \
 nf-core/cloudres was originally written by maxlcummins.
 
 We thank the following people for their extensive assistance in the development of this pipeline:
-
-<!-- TODO nf-core: If applicable, make list of people who have also contributed -->
 
 ## Contributions and Support
 
