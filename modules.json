@@ -10,6 +10,16 @@
                         "git_sha": "81880787133db07d9b4c1febd152c090eb8325dc",
                         "installed_by": ["modules"]
                     },
+                    "csvtk/concat": {
+                        "branch": "master",
+                        "git_sha": "fa92936611247ca647ddee970f94d83f1bcb0ffe",
+                        "installed_by": ["modules"]
+                    },
+                    "csvtk/join": {
+                        "branch": "master",
+                        "git_sha": "fa92936611247ca647ddee970f94d83f1bcb0ffe",
+                        "installed_by": ["modules"]
+                    },
                     "fastp": {
                         "branch": "master",
                         "git_sha": "df6f67c19f76671b42ffa395cd2fde8958111eba",

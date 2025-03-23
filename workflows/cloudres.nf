@@ -13,6 +13,9 @@ include { RASUSA } from '../modules/nf-core/rasusa/main'
 include { QUAST } from '../modules/nf-core/quast/main'
 include { MLST } from '../modules/nf-core/mlst/main'
 include { ABRITAMR_RUN } from '../modules/nf-core/abritamr/run/main'
+include { CSVTK_CONCAT as CSVTK_CONCAT_MLST } from '../modules/nf-core/csvtk/concat/main' 
+include { CSVTK_CONCAT as CSVTK_CONCAT_ABRITAMR } from '../modules/nf-core/csvtk/concat/main' 
+include { CSVTK_JOIN } from '../modules/nf-core/csvtk/join/main' 
 include { paramsSummaryMap       } from 'plugin/nf-schema'
 include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
@@ -123,6 +126,24 @@ workflow CLOUDRES {
     ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]})
     ch_versions = ch_versions.mix(FASTQC.out.versions.first())
 
+    MLST.out.tsv.collect{meta, tsv -> tsv}.map{ tsv -> [[id:'mlst'], tsv]}.set{ ch_merge_mlst_tsv }
+    CSVTK_CONCAT_MLST(ch_merge_mlst_tsv, 'tsv', 'tsv')
+    mlst_combined = CSVTK_CONCAT_MLST.out.csv
+    ch_versions = ch_versions.mix(CSVTK_CONCAT_MLST.out.versions)
+
+    ABRITAMR_RUN.out.txt.collect{meta, txt -> txt}.map{ txt -> [[id:'abritamr'], txt]}.set{ ch_merge_abritamr_txt }
+    CSVTK_CONCAT_ABRITAMR(ch_merge_abritamr_txt, 'tsv', 'tsv')
+    abritamr_combined = CSVTK_CONCAT_ABRITAMR.out.csv
+    //ch_merged_summaries = ch_merged_summaries.mix(CSVTK_CONCAT.out.csv)
+    ch_versions = ch_versions.mix(CSVTK_CONCAT_ABRITAMR.out.versions)
+
+    //CSVTK_JOIN(ch_merge_abritamr_txt, 'tsv', 'tsv')
+    //abritamr_combined = CSVTK_JOIN.out.csv
+    //ch_merged_summaries = ch_merged_summaries.mix(CSVTK_CONCAT.out.csv)
+    //ch_versions = ch_versions.mix(CSVTK_JOIN.out.versions)
+
+    
+
     //
     // Collate and save software versions
     //
@@ -175,6 +196,7 @@ workflow CLOUDRES {
         []
     )
     emit:
+    merged_summary_tsv = abritamr_combined
     multiqc_report = MULTIQC.out.report.toList() // channel: /path/to/multiqc_report.html
     versions       = ch_versions                 // channel: [ path(versions.yml) ]
     
